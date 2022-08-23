@@ -26,4 +26,4 @@ Resources:
       InstanceType: t2.micro
       Tags:
         - Key: Project
-          value: udacity
+          Value: udacity
