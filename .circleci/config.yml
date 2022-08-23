@@ -27,6 +27,24 @@ jobs:
           name: create infrasturcture
           command: |
             aws cloudformation create-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-body file://template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
+      - run:
+          name: populate inventory
+          command: |
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=udacity" --output text >> inventory
+  
+  configure_infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["96:4a:db:8e:55:54:05:76:4f:5c:26:0a:de:d9:7d:0e"]
+      - run:
+          name: install ansible
+          command: apk add --update ansible
+      - run:
+          name: Run playbook and configure server
+          command: ansible-playbook playbook.yml -i inventory
 
 workflows:
   infratructure_creation:
@@ -35,3 +53,6 @@ workflows:
       - create_infrastructure:
           requires:
             - test_aws_cli_config
+      - configure_infrastructure
+          requires:
+            - create_infrastructure
