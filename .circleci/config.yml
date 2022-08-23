@@ -32,3 +32,4 @@ workflows:
       - create_infrastructure:
           requires:
             - confirm_aws_cli_config
+            
