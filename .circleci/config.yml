@@ -27,8 +27,12 @@ jobs:
           name: create infrasturcture
           command: |
             aws cloudformation create-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-body file://template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
+      
+  populate inventory:
+    executor: aws-cli/default
+    steps: 
       - run:
-          name: populate inventory
+          name: populate ip address
           command: |
             echo "[host]" > inventory
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=udacity" --output text >> inventory
@@ -64,6 +68,9 @@ workflows:
       - create_infrastructure:
           requires:
             - test_aws_cli_config
+      - populate inventory:
+          requires:
+            - create_infrastructure
       - configure_infrastructure:
           requires:
             - create_infrastructure
