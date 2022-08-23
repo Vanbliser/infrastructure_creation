@@ -5,18 +5,16 @@ orbs:
 
 jobs:
   confirm_aws_cli_config:
-    docker:
-      - image: amazon/aws-cli
+    executor: aws-cli/default
     steps:
       - aws-cli/setup
       - run:
           name: list ec2 instances
           command: |
-            aws ec2 describe-instances
+            aws --version
 
   create_infrastructure:
-    docker:
-      - image: amazon/aws-cli
+    executor: aws-cli/default
     steps:
       - aws-cli/setup
       - checkout
