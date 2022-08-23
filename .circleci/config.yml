@@ -26,7 +26,7 @@ jobs:
       - run:
           name: create infrasturcture
           command: |
-            aws cloudformation create-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-body file://template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
+            aws cloudformation create-stack --stack-name myStack1-${CIRCLE_WORKFLOW_ID:0:5} --template-body file://template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
       - run:
           name: populate inventory
           command: |
