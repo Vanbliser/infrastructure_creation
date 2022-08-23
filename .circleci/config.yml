@@ -29,9 +29,6 @@ workflows:
   infratructure_creation:
     jobs:
       - confirm_aws_cli_config
-      - create_infrastructure
-          requires: 
+      - create_infrastructure:
+          requires:
             - confirm_aws_cli_config
-            
-    
-
