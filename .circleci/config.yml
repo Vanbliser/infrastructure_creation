@@ -10,9 +10,8 @@ jobs:
     steps:
       - aws-cli/setup
       - run:
-          name: list iam users
+          name: list ec2 instances
           command: |
-            aws iam list-users
             aws ec2 describe-instances
 
   create_infrastructure:
