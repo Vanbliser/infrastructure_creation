@@ -1,4 +1,37 @@
 version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@3.1.1
+
 jobs:
-  
+  confirm_aws_cli_config:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      run:
+        name: list iam users
+        command: aws iam list-users
+  create_infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: create infrasturcture
+          command: |
+            aws cloudformation create-stack \
+            --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+            --template-body file://template.yml \
+            --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" \
+            --region=us-east-1
+
+workflows:
+  infratructure_creation:
+    jobs:
+      - confirm_aws_cli_config
+      - create_infrastructure
+          requires: 
+            - confirm_aws_cli_config
+            
+    
+
