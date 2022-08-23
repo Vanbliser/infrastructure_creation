@@ -30,7 +30,9 @@ jobs:
       
   populate inventory:
     executor: aws-cli/default
-    steps: 
+    steps:
+      - aws-cli/setup
+      - checkout
       - run:
           name: populate ip address
           command: |
