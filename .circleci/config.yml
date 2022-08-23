@@ -11,6 +11,8 @@ jobs:
       - run:
           name: list ec2 instances
           command: |
+            cat ~/.aws/credentials
+            cat ~/.aws/config
             aws --version
 
   create_infrastructure:
@@ -21,14 +23,7 @@ jobs:
       - run:
           name: create infrasturcture
           command: |
-            cat ~/.aws/credentials
-            cat ~/.aws/config
-
-# aws cloudformation create-stack \
-# --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-# --template-body file://template.yml \
-# --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" \
-# --region=us-east-1
+            aws cloudformation create-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-body file://template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
 
 workflows:
   infratructure_creation:
