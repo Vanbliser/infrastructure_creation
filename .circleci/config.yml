@@ -8,9 +8,13 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
+      - aws-cli/setup
       - run:
           name: list iam users
-          command: aws --version
+          command: |
+            aws iam list-users
+            aws ec2 describe-instances
+
   create_infrastructure:
     docker:
       - image: amazon/aws-cli
