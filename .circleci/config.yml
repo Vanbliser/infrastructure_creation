@@ -8,9 +8,9 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
-      run:
-        name: list iam users
-        command: aws iam list-users
+      - run:
+          name: list iam users
+          command: aws iam list-users
   create_infrastructure:
     docker:
       - image: amazon/aws-cli
@@ -32,4 +32,3 @@ workflows:
       - create_infrastructure:
           requires:
             - confirm_aws_cli_config
-            
