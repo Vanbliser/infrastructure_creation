@@ -5,15 +5,13 @@ orbs:
 
 jobs:
   confirm_aws_cli_config:
-    docker:
-      - image: amazon/aws-cli
+    executor: aws-cli/default
     steps:
       - run:
           name: list iam users
           command: aws iam list-users
   create_infrastructure:
-    docker:
-      - image: amazon/aws-cli
+    executor: aws-cli/default
     steps:
       - checkout
       - run:
