@@ -55,7 +55,7 @@ jobs:
   
   configure_infrastructure:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/python:3.10.6
     steps:
       - checkout
       - attach_workspace:
@@ -64,7 +64,12 @@ jobs:
           fingerprints: ["96:4a:db:8e:55:54:05:76:4f:5c:26:0a:de:d9:7d:0e"]
       - run:
           name: install ansible
-          command: apk add --update ansible
+          command: pip install --user ansible
+      - run:
+          name: verify ansible
+          command: |
+            ansible --version
+            python3 -m pip show ansible
       - run:
           name: display ip address
           command: cat ip_address
