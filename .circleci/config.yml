@@ -3,6 +3,15 @@ version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@3.1.1
 
+command:
+  destroy_infrastructure:
+    step:
+      - run:
+          name: destroy the creating infrastructure
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+
 jobs:
   test_aws_cli_config:
     executor: aws-cli/default
@@ -26,23 +35,13 @@ jobs:
       - run:
           name: create infrasturcture
           command: |
-            aws cloudformation create-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-body file://template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
-      
-  populate inventory:
-    executor: aws-cli/default
-    steps:
-      - aws-cli/setup
-      - checkout
-      - run:
-          name: populate ip address
-          command: |
-            echo "[host]" > /tmp/inventory
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=udacity" --output text >> /tmp/inventory
-            cat /tmp/inventory
+            aws cloudformation deploy --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-file template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=${CIRCLE_WORKFLOW_ID}" --output text > /tmp/ip_address
       - persist_to_workspace:
           root: /tmp
           paths:
-            - inventory
+            - ip_address
+      - destroy_infrastructure
   
   configure_infrastructure:
     docker:
@@ -57,22 +56,57 @@ jobs:
           name: install ansible
           command: apk add --update ansible
       - run:
-          name: display inventory content
-          command: cat /tmp/inventory
+          name: display ip address
+          command: cat /tmp/ip_address
+      - run:
+          name: create inventory file
+          command: |
+            echo "[host]" > inventory
+            cat /tmp/ip_address >> inventory
+            cat inventory
       - run:
           name: Run playbook and configure server
-          command: ansible-playbook playbook.yml -i /tmp/inventory
+          command: ansible-playbook playbook.yml -i inventory
+      - destroy_infrastructure
+
+  smoke_test:
+    docker:
+      - image: alpine:latest
+    steps:
+      - attach_workspace:
+          at: /tmp
+      - run:
+          name: install curl
+          command: apk add --update curl
+      - run:
+          name: query website endpoint
+          command: |
+            IP=$(cat /tmp/ip_address)
+            URL="http://${IP}:3000"
+            if curl -s --head ${URL} 
+            then
+              return 0
+            else
+              return 1
+            fi
+      - run:
+          name: display website content
+          command: |
+            IP=$(cat /tmp/ip_address)
+            URL="http://${IP}:3000"
+            curl ${URL}
+      - destroy_infrastructure
 
 workflows:
-  infratructure_creation:
+  deploy:
     jobs:
       - test_aws_cli_config
       - create_infrastructure:
           requires:
             - test_aws_cli_config
-      - populate inventory:
-          requires:
-            - create_infrastructure
       - configure_infrastructure:
           requires:
-            - populate inventory
+            - create_infrastructure
+      - smoke_test:
+          requires:
+            - configure_infrastructure
