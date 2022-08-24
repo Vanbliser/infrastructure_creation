@@ -35,12 +35,12 @@ jobs:
       - run:
           name: create infrasturcture
           command: |
-            mkdir /tmp
+            mkdir /temp
             aws cloudformation deploy --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-file template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=${CIRCLE_WORKFLOW_ID}" --output text > /tmp/ip_address
-            cat /tmp/ip_address
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=${CIRCLE_WORKFLOW_ID}" --output text > /temp/ip_address
+            cat /temp/ip_address
       - persist_to_workspace:
-          root: /tmp
+          root: /temp
           paths:
             - ip_address
       - destroy_infrastructure
@@ -50,7 +50,7 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - attach_workspace:
-          at: /tmp
+          at: /temp
       - checkout
       - add_ssh_keys:
           fingerprints: ["96:4a:db:8e:55:54:05:76:4f:5c:26:0a:de:d9:7d:0e"]
@@ -59,31 +59,29 @@ jobs:
           command: apk add --update ansible
       - run:
           name: display ip address
-          command: cat /tmp/ip_address
+          command: cat /temp/ip_address
       - run:
-          name: create inventory file
+          name: populate and display inventory file
           command: |
             echo "[host]" > inventory
-            cat /tmp/ip_address >> inventory
+            cat /temp/ip_address >> inventory
             cat inventory
       - run:
           name: Run playbook and configure server
           command: ansible-playbook playbook.yml -i inventory
-      - destroy_infrastructure
 
   smoke_test:
-    docker:
-      - image: alpine:latest
+    executor: aws-cli/default
     steps:
       - attach_workspace:
-          at: /tmp
+          at: /temp
       - run:
           name: install curl
           command: apk add --update curl
       - run:
           name: query website endpoint
           command: |
-            IP=$(cat /tmp/ip_address)
+            IP=$(cat /temp/ip_address)
             URL="http://${IP}:3000"
             if curl -s --head ${URL} 
             then
@@ -94,7 +92,7 @@ jobs:
       - run:
           name: display website content
           command: |
-            IP=$(cat /tmp/ip_address)
+            IP=$(cat /temp/ip_address)
             URL="http://${IP}:3000"
             curl ${URL}
       - destroy_infrastructure
