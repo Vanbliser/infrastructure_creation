@@ -35,10 +35,18 @@ jobs:
       - run:
           name: create infrasturcture
           command: |
-            touch ip_address
             aws cloudformation deploy --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} --template-file template.yml --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --region=us-east-1
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=${CIRCLE_WORKFLOW_ID}" --output text >> ip_address
-            cat ip_address
+      - run:
+          name: display ip address
+          command: |
+            IP=$(aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --filters "Name=tag:Project,Values=udacity" --output text)
+            if $IP
+            then 
+              return 1
+            else
+              echo $IP
+              echo $IP > ip_address
+            fi 
       - persist_to_workspace:
           root: .
           paths:
@@ -87,14 +95,15 @@ jobs:
             then
               return 0
             else
+              echo $IP
               return 1
             fi
       - run:
-          name: display website content
+          name: display website URL
           command: |
             IP=$(cat ip_address)
             URL="http://${IP}:3000"
-            curl ${URL}
+            echo $URL
       - destroy_infrastructure
 
 workflows:
