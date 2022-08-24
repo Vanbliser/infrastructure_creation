@@ -79,7 +79,8 @@ jobs:
           command: ansible-playbook playbook.yml -i inventory
 
   smoke_test:
-    executor: aws-cli/default
+    docker:
+      - image: alpine:latest
     steps:
       - attach_workspace:
           at: .
@@ -89,6 +90,7 @@ jobs:
       - run:
           name: query website endpoint
           command: |
+            cat ip_address
             IP=$(cat ip_address)
             URL="http://${IP}:3000"
             if curl -s --head ${URL} 
@@ -104,7 +106,6 @@ jobs:
             IP=$(cat ip_address)
             URL="http://${IP}:3000"
             echo $URL
-      - destroy_infrastructure
 
 workflows:
   deploy:
